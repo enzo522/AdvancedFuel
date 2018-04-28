@@ -83,31 +83,37 @@ namespace AdvancedFuel
             doesOilHaveToBeRemoved = false;
             forTires = false;
             isDoingSomething = false;
-            
+
             Tick += OnTick;
             KeyDown += OnKeyDown;
         }
 
         private void OnTick(Object sender, EventArgs e)
         {
+            DrawText(currentTime(), uiX + 0.058f, uiY + 0.143f, 0.38f, 1);
             playerPed = Game.Player.Character;
 
-            if (playerPed.IsSittingInVehicle())
-            {
-                playerVehicle = playerPed.CurrentVehicle;
-
-                if (playerVehicle.Model.IsBicycle) started = false;
-                else started = true;
-            }
+            if (Function.Call<bool>(Hash.GET_MISSION_FLAG)) started = false;
             else
             {
-                started = false;
-
-                if (playerPed.IsGettingIntoAVehicle)
+                if (playerPed.IsSittingInVehicle())
                 {
-                    if (!playerPed.GetVehicleIsTryingToEnter().NumberPlate.Equals(lastVehiclePlate)) isNewCar = true;
+                    playerVehicle = playerPed.CurrentVehicle;
+
+                    if (playerVehicle.Model.IsBicycle) started = false;
+                    else started = true;
+                }
+                else
+                {
+                    started = false;
+
+                    if (playerPed.IsGettingIntoAVehicle)
+                    {
+                        if (!playerPed.GetVehicleIsTryingToEnter().NumberPlate.Equals(lastVehiclePlate)) isNewCar = true;
+                    }
                 }
             }
+
 
             if (started)
             {
@@ -126,7 +132,8 @@ namespace AdvancedFuel
                     engineOilHealth -= playerVehicle.Speed / 24000;
                     transOilHealth -= playerVehicle.Speed / 24000;
 
-                    if (engineOilHealth <= maxEngOilHealth * 0.2 || transOilHealth <= maxTransOilHealth * 0.2) playerVehicle.EngineHealth -= 0.02f;
+                    if (engineOilHealth <= maxEngOilHealth * 0.2) playerVehicle.EngineHealth -= 0.02f;
+                    if (transOilHealth <= maxTransOilHealth * 0.2) playerVehicle.EngineHealth -= 0.02f;
                 }
 
                 if (leftGas <= 0)
@@ -657,72 +664,80 @@ namespace AdvancedFuel
 
         private static void SettingStations()
         {
-            gasStationBlips = new List<Blip>();
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -80.7f, -1761.8f, 29.8f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -518.8f, -1210.0f, 18.33f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -714.85f, -932.65f, 19.2f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 273.25f, -1261.05f, 29.3f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 811.285f, -1030.9f, 26.4f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1212.5f, -1403.6f, 35.38f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2574.15f, 359.1f, 108.5f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1183.0f, -320.42f, 69.3f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 629.05f, 274.0f, 103.0f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1429.65f, -279.35f, 46.3f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -2087.57f, -321.15f, 13.1f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1796.55f, 811.7f, 138.7f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -2558.05f, 2327.3f, 33.0f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 48.188f, 2779.2f, 58.0f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 263.0f, 2607.35f, 50.0f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1209.9f, 2658.7f, 37.9f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2539.25f, 2594.6f, 37.9f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2681.7f, 3266.4f, 55.2f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2009.1f, 3777.6f, 32.4f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1684.1f, 4932.15f, 42.2f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1705.5f, 6414.05f, 32.7f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 171.62f, 6603.35f, 32.0f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -91.7f, 6423.2f, 31.6f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1043.25f, 2668.5f, 39.7f));
-            gasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -594.2f, 5025.4f, 140.3f));
+            gasStationBlips = new List<Blip>
+            {
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -80.7f, -1761.8f, 29.8f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -518.8f, -1210.0f, 18.33f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -714.85f, -932.65f, 19.2f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 273.25f, -1261.05f, 29.3f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 811.285f, -1030.9f, 26.4f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1212.5f, -1403.6f, 35.38f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2574.15f, 359.1f, 108.5f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1183.0f, -320.42f, 69.3f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 629.05f, 274.0f, 103.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1429.65f, -279.35f, 46.3f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -2087.57f, -321.15f, 13.1f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1796.55f, 811.7f, 138.7f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -2558.05f, 2327.3f, 33.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 48.188f, 2779.2f, 58.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 263.0f, 2607.35f, 50.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1209.9f, 2658.7f, 37.9f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2539.25f, 2594.6f, 37.9f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2681.7f, 3266.4f, 55.2f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2009.1f, 3777.6f, 32.4f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1684.1f, 4932.15f, 42.2f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1705.5f, 6414.05f, 32.7f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 171.62f, 6603.35f, 32.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -91.7f, 6423.2f, 31.6f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1043.25f, 2668.5f, 39.7f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -594.2f, 5025.4f, 140.3f)
+            };
 
-            avturStationBlips = new List<Blip>();
-            avturStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1411.75f, 3012.3f, 41.1f));
-            avturStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -981.0f, -2995.0f, 13.1f));
-            avturStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2119.5f, 4806.3f, 41.2f));
+            avturStationBlips = new List<Blip>
+            {
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1411.75f, 3012.3f, 41.1f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -981.0f, -2995.0f, 13.1f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2119.5f, 4806.3f, 41.2f)
+            };
 
-            avgasStationBlips = new List<Blip>();
-            avgasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1705.7f, 3271.9f, 40.6f));
-            avgasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2102.05f, 4769.4f, 40.7f));
-            avgasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -231.25f, 6257.9f, 31.2f));
-            avgasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1718.1f, -1008.8f, 5.2f));
-            avgasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1223.6f, -1824.75f, 2.2f));
-            avgasStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 846.6f, -3219.5f, 5.6f));
+            avgasStationBlips = new List<Blip>
+            {
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1705.7f, 3271.9f, 40.6f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2102.05f, 4769.4f, 40.7f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -231.25f, 6257.9f, 31.2f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1718.1f, -1008.8f, 5.2f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1223.6f, -1824.75f, 2.2f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 846.6f, -3219.5f, 5.6f)
+            };
 
-            minyakStationBlips = new List<Blip>();
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1800.5f, -1233.1f, 0.3f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -3426.5f, 948.2f, 0.1f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -2527.9f, 2541.0f, 0.1f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -2302.3f, 2561.2f, 0.1f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -2076.9f, 2597.7f, 0.1f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1768.9f, 2634.0f, 0.1f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 860.2f, 3699.8f, 30.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1731.7f, 3987.5f, 30.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2378.7f, 4295.9f, 30.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1298.6f, 4208.5f, 30.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 710.9f, 4090.5f, 30.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1617.8f, 5268.5f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -304.5f, 6659.9f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 3874.2f, 4464.0f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 36.8f, -2775.9f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -60.3f, -2768.7f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -292.2f, -2761.8f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -352.9f, -2410.8f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 128.9f, -2272.9f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -855.3f, -1486.4f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -911.7f, -1469.9f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -886.0f, -1406.8f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -964.2f, -1387.1f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -839.8f, -1380.7f, 1.0f));
-            minyakStationBlips.Add(Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -765.8f, -1378.9f, 1.0f));
+            minyakStationBlips = new List<Blip>
+            {
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1800.5f, -1233.1f, 0.3f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -3426.5f, 948.2f, 0.1f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -2527.9f, 2541.0f, 0.1f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -2302.3f, 2561.2f, 0.1f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -2076.9f, 2597.7f, 0.1f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1768.9f, 2634.0f, 0.1f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 860.2f, 3699.8f, 30.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1731.7f, 3987.5f, 30.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2378.7f, 4295.9f, 30.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1298.6f, 4208.5f, 30.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 710.9f, 4090.5f, 30.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1617.8f, 5268.5f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -304.5f, 6659.9f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 3874.2f, 4464.0f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 36.8f, -2775.9f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -60.3f, -2768.7f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -292.2f, -2761.8f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -352.9f, -2410.8f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 128.9f, -2272.9f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -855.3f, -1486.4f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -911.7f, -1469.9f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -886.0f, -1406.8f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -964.2f, -1387.1f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -839.8f, -1380.7f, 1.0f),
+                Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -765.8f, -1378.9f, 1.0f)
+            };
 
             foreach (Blip b in gasStationBlips)
             {
@@ -955,9 +970,21 @@ namespace AdvancedFuel
             return false;
         }
 
-        protected override void Dispose(bool A_0)
+        private string currentTime()
         {
-            base.Dispose(A_0);
+            string curTime = "";
+            int curHours = Function.Call<int>(Hash.GET_CLOCK_HOURS);
+            int curMins = Function.Call<int>(Hash.GET_CLOCK_MINUTES);
+
+            if (curHours < 10) curTime += "0" + curHours;
+            else curTime += curHours;
+
+            curTime += " : ";
+
+            if (curMins < 10) curTime += "0" + curMins;
+            else curTime += curMins;
+
+            return curTime;
         }
     }
 }
