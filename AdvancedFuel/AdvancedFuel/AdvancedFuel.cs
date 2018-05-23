@@ -218,13 +218,13 @@ namespace AdvancedFuel
                     DrawText("$" + gasPrice + " / L", 0.148f, 0.18f, 0.42f, 2);
 
                     if (playerVehicle.Model.IsCar) DrawText("PREMIUM PETROL", 0.1f, 0.106f, 0.51f, 1);
-                    else if (playerVehicle.Model.IsBike || playerVehicle.Model.IsQuadbike) DrawText("2 TAK", 0.1f, 0.106f, 0.51f, 1);
-                    else if (playerVehicle.Model.IsPlane) DrawText("AVTUR", 0.1f, 0.106f, 0.51f, 1);
-                    else if (playerVehicle.Model.IsHelicopter) DrawText("AVGAS", 0.1f, 0.106f, 0.51f, 1);
-                    else if (playerVehicle.Model.IsBoat) DrawText("MINYAK TANAH", 0.1f, 0.106f, 0.51f, 1);
+                    else if (playerVehicle.Model.IsBike || playerVehicle.Model.IsQuadbike) DrawText("FIRST GRADE GASOLINE", 0.1f, 0.106f, 0.51f, 1);
+                    else if (playerVehicle.Model.IsPlane) DrawText("JET A-1 KEROSENE", 0.1f, 0.106f, 0.51f, 1);
+                    else if (playerVehicle.Model.IsHelicopter) DrawText("PERFORMANCE NUMBER", 0.1f, 0.106f, 0.51f, 1);
+                    else if (playerVehicle.Model.IsBoat) DrawText("NUMBER ONE PETROLEUM", 0.1f, 0.106f, 0.51f, 1);
 
-                    DrawText("S M", 0.081f, 0.003f, 0.925f, 4);
-                    DrawText("A R T", 0.116f, 0.003f, 0.925f, 3);
+                    DrawText("E S", 0.081f, 0.003f, 0.925f, 4);
+                    DrawText("SENCE", 0.116f, 0.003f, 0.925f, 3);
                     DrawText("FUEL MOD", 0.083f, 0.047f, 0.4f, 2);
                     Function.Call(Hash.DRAW_RECT, 0.1f, 0.056f, 0.175f, 0.113f, uiColor, uiColor, uiColor, 125);
                     Function.Call(Hash.DRAW_RECT, 0.1f, 0.052f, 0.16f, 0.09f, 255, 255, 255, 150);
