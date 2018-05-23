@@ -20,15 +20,15 @@ namespace AdvancedFuel
         private static int maxTransOilHealth;
         private float transOilHealth;
 
-        private static string lastVehiclePlate;
+        private List<UsedVehicle> usedVehicles;
         private static float gasPrice;
         private static float totalPrice;
         private float refuelAmount;
-        private int menu;
+        private float remainder;
+        private Menu menu;
         private float menuY;
         private int clock;
-
-        private bool isNewCar;
+        
         private bool drawStationUI;
         private bool doesEngineHaveToStop;
         private bool doesOilHaveToBeRemoved;
@@ -36,13 +36,23 @@ namespace AdvancedFuel
         private bool isDoingSomething;
 
         private static List<Blip> gasStationBlips;
-        private static List<Blip> avturStationBlips;
-        private static List<Blip> avgasStationBlips;
-        private static List<Blip> minyakStationBlips;
+        private static List<Blip> planeStationBlips;
+        private static List<Blip> heliStationBlips;
+        private static List<Blip> boatStationBlips;
 
         private static Random r;
         private static Ped playerPed;
         private static Vehicle playerVehicle;
+
+        public enum Menu
+        {
+            Fuel,
+            EngineOil,
+            TransOil,
+            Repair,
+            BulletproofTire,
+            HeliumHeadlight
+        }
 
         static AdvancedFuel()
         {
@@ -54,8 +64,7 @@ namespace AdvancedFuel
             totalGas = 0;
             maxEngOilHealth = 0;
             maxTransOilHealth = 0;
-
-            lastVehiclePlate = "";
+            
             gasPrice = 0.0f;
             totalPrice = 0.0f;
 
@@ -68,16 +77,17 @@ namespace AdvancedFuel
 
         public AdvancedFuel()
         {
+            usedVehicles = new List<UsedVehicle>();
             leftGas = 0.0f;
             engineOilHealth = 0.0f;
             transOilHealth = 0.0f;
 
             refuelAmount = 0.0f;
-            menu = 0;
+            remainder = 0.0f;
+            menu = Menu.Fuel;
             menuY = 0.0f;
             clock = 0;
-
-            isNewCar = false;
+            
             drawStationUI = false;
             doesEngineHaveToStop = false;
             doesOilHaveToBeRemoved = false;
@@ -92,11 +102,11 @@ namespace AdvancedFuel
         {
             DrawText(currentTime(), uiX + 0.058f, uiY + 0.143f, 0.38f, 1);
             playerPed = Game.Player.Character;
-
+            
             if (Function.Call<bool>(Hash.GET_MISSION_FLAG)) started = false;
             else
             {
-                if (playerPed.IsSittingInVehicle())
+                if (playerPed.IsInVehicle())
                 {
                     playerVehicle = playerPed.CurrentVehicle;
 
@@ -106,24 +116,40 @@ namespace AdvancedFuel
                 else
                 {
                     started = false;
+                    playerVehicle = null;
 
                     if (playerPed.IsGettingIntoAVehicle)
                     {
-                        if (!playerPed.GetVehicleIsTryingToEnter().NumberPlate.Equals(lastVehiclePlate)) isNewCar = true;
+                        UsedVehicle uv = usedVehicles.Find(v => v.Handle == playerPed.GetVehicleIsTryingToEnter().Handle);
+
+                        if (uv != null)
+                        {
+                            SettingValues(playerPed.GetVehicleIsTryingToEnter());
+                            leftGas = uv.LeftGas;
+                            engineOilHealth = uv.EngineOilHealth;
+                            transOilHealth = uv.TransOilHealth;
+                        }
+                        else
+                        {
+                            SettingValues(playerPed.GetVehicleIsTryingToEnter());
+                            leftGas = r.Next(5, totalGas);
+                            engineOilHealth = r.Next(100, maxEngOilHealth);
+                            transOilHealth = r.Next(100, maxTransOilHealth);
+                            usedVehicles.Add(new UsedVehicle(playerPed.GetVehicleIsTryingToEnter().Handle, leftGas, engineOilHealth, transOilHealth));
+                        }
                     }
                 }
             }
 
-
             if (started)
             {
-                if (isNewCar)
+                UsedVehicle uv = usedVehicles.Find(v => v.Handle == playerVehicle.Handle);
+
+                if (uv != null)
                 {
-                    SettingValues();
-                    leftGas = r.Next(5, totalGas);
-                    engineOilHealth = r.Next(100, maxEngOilHealth);
-                    transOilHealth = r.Next(100, maxTransOilHealth);
-                    isNewCar = false;
+                    uv.LeftGas = leftGas;
+                    uv.EngineOilHealth = engineOilHealth;
+                    uv.TransOilHealth = transOilHealth;
                 }
 
                 if (playerVehicle.Speed > 0)
@@ -138,14 +164,13 @@ namespace AdvancedFuel
 
                 if (leftGas <= 0)
                 {
-                    leftGas = 0;
+                    leftGas = 0.0f;
                     playerVehicle.IsDriveable = false;
                     UI.Notify("Your gas tank is empty.");
                 }
 
-                if (engineOilHealth <= 0) engineOilHealth = 0;
-
-                if (transOilHealth <= 0) transOilHealth = 0;
+                if (engineOilHealth <= 0) engineOilHealth = 0.0f;
+                if (transOilHealth <= 0) transOilHealth = 0.0f;
 
                 Function.Call(Hash.DRAW_RECT, uiX, uiY, 0.1405f, 0.028f, 0, 0, 0, 150);
                 Function.Call(Hash.DRAW_RECT, uiX + 0.061f, uiY, 0.016f, 0.026f, uiColor, uiColor, uiColor, 70);
@@ -239,32 +264,32 @@ namespace AdvancedFuel
 
                     switch (menu)
                     {
-                        case 0:
+                        case Menu.Fuel:
                             menuY = 0.224f;
                             DrawText("$" + Math.Round(totalPrice, 1), 0.1f, 0.43f, 0.45f, 2);
                             break;
 
-                        case 1:
+                        case Menu.EngineOil:
                             menuY = 0.254f;
                             DrawText("$" + (maxEngOilHealth / 2), 0.1f, 0.43f, 0.45f, 2);
                             break;
 
-                        case 2:
+                        case Menu.TransOil:
                             menuY = 0.284f;
                             DrawText("$" + (maxTransOilHealth / 2), 0.1f, 0.43f, 0.45f, 2);
                             break;
 
-                        case 3:
+                        case Menu.Repair:
                             menuY = 0.314f;
                             DrawText("$" + Math.Round(Convert.ToDouble(2000.0f - playerVehicle.EngineHealth - playerVehicle.BodyHealth), 1), 0.1f, 0.43f, 0.45f, 2);
                             break;
 
-                        case 4:
+                        case Menu.BulletproofTire:
                             menuY = 0.344f;
                             DrawText("$300", 0.1f, 0.43f, 0.45f, 2);
                             break;
 
-                        case 5:
+                        case Menu.HeliumHeadlight:
                             menuY = 0.374f;
                             DrawText("$500", 0.1f, 0.43f, 0.45f, 2);
                             break;
@@ -274,24 +299,27 @@ namespace AdvancedFuel
                     {
                         switch (menu)
                         {
-                            case 0:
-                                if ((leftGas + refuelAmount) <= totalGas && refuelAmount >= 0.02f)
+                            case Menu.Fuel:
+                                if (remainder >= 0)
                                 {
                                     leftGas += 0.1f;
-                                    refuelAmount -= 0.02f;
-                                    DrawText("Refueling.. (" + Math.Floor(Convert.ToDouble(100 * leftGas / totalGas)) + "%)", 0.1f, 0.396f, 0.42f, 1);
+                                    remainder -= 0.02f;
+                                    DrawText("Refueling.. (" + Math.Floor(Convert.ToDouble(100 * (refuelAmount - remainder) / refuelAmount)) + "%)", 0.1f, 0.396f, 0.42f, 1);
                                 }
                                 else
                                 {
+                                    if (leftGas > totalGas) leftGas = totalGas;
+
                                     Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                                     refuelAmount = 0.0f;
+                                    remainder = 0.0f;
                                     doesEngineHaveToStop = false;
                                     isDoingSomething = false;
                                 }
 
                                 break;
 
-                            case 1:
+                            case Menu.EngineOil:
                                 if (doesOilHaveToBeRemoved)
                                 {
                                     if (engineOilHealth >= 1.8f)
@@ -324,7 +352,7 @@ namespace AdvancedFuel
 
                                 break;
 
-                            case 2:
+                            case Menu.TransOil:
                                 if (doesOilHaveToBeRemoved)
                                 {
                                     if (transOilHealth >= 1.8f)
@@ -356,7 +384,7 @@ namespace AdvancedFuel
 
                                 break;
 
-                            case 3:
+                            case Menu.Repair:
                                 if (playerVehicle.EngineHealth <= 999.0f)
                                 {
                                     playerVehicle.EngineHealth += 1.0f;
@@ -379,49 +407,39 @@ namespace AdvancedFuel
 
                                 break;
 
-                            case 4:
+                            case Menu.BulletproofTire:
                                 if (forTires)
                                 {
-                                    if (clock <= 0)
+                                    if (clock < 500)
+                                    {
+                                        DrawText("Now removing current tires.. (" + Math.Floor(Convert.ToDouble(100 * clock / 500)) + "%)", 0.1f, 0.396f, 0.42f, 1);
+                                        clock++;
+                                    }
+                                    else if (clock == 500)
                                     {
                                         playerVehicle.BurstTire(0);
                                         playerVehicle.BurstTire(1);
-                                        clock++;
-                                    }
-                                    else if (clock < 500)
-                                    {
-                                        DrawText("Now removing current front tires.. (" + Math.Floor(Convert.ToDouble(100 * clock / 500)) + "%)", 0.1f, 0.396f, 0.42f, 1);
+                                        playerVehicle.BurstTire(2);
+                                        playerVehicle.BurstTire(3);
+                                        playerVehicle.BurstTire(4);
+                                        playerVehicle.BurstTire(5);
                                         clock++;
                                     }
                                     else if (clock < 1000)
                                     {
-                                        DrawText("Now installing bulletproof front tires.. (" + Math.Floor(Convert.ToDouble(100 * (clock - 500) / 500)) + "%)", 0.1f, 0.396f, 0.42f, 1);
+                                        DrawText("Now installing bulletproof tires.. (" + Math.Floor(Convert.ToDouble(100 * (clock - 500) / 500)) + "%)", 0.1f, 0.396f, 0.42f, 1);
                                         clock++;
                                     }
-                                    else if (clock == 1000)
+                                    else if (clock >= 1000)
                                     {
                                         Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                                         playerVehicle.FixTire(0);
                                         playerVehicle.FixTire(1);
-                                        playerVehicle.BurstTire(5);
-                                        playerVehicle.BurstTire(7);
-                                        clock++;
-                                    }
-                                    else if (clock < 1500)
-                                    {
-                                        DrawText("Now removing current rear tires.. (" + Math.Floor(Convert.ToDouble(100 * (clock - 1000) / 500)) + "%)", 0.1f, 0.396f, 0.42f, 1);
-                                        clock++;
-                                    }
-                                    else if (clock < 2000)
-                                    {
-                                        DrawText("Now installing bulletproof rear tires.. (" + Math.Floor(Convert.ToDouble(100 * (clock - 1500) / 500)) + "%)", 0.1f, 0.396f, 0.42f, 1);
-                                        clock++;
-                                    }
-                                    else if (clock >= 2000)
-                                    {
-                                        Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+                                        playerVehicle.FixTire(2);
+                                        playerVehicle.FixTire(3);
+                                        playerVehicle.FixTire(4);
                                         playerVehicle.FixTire(5);
-                                        playerVehicle.FixTire(7);
+
                                         playerVehicle.CanTiresBurst = false;
                                         forTires = false;
                                         doesEngineHaveToStop = false;
@@ -431,7 +449,7 @@ namespace AdvancedFuel
 
                                 break;
 
-                            case 5:
+                            case Menu.HeliumHeadlight:
                                 if (!forTires)
                                 {
                                     if (clock < 500)
@@ -471,7 +489,7 @@ namespace AdvancedFuel
                         Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                         menu--;
 
-                        if (menu < 0) menu = 5;
+                        if ((int)menu < (int)Menu.Fuel) menu = Menu.HeliumHeadlight;
                     }
 
                     if (e.KeyCode == Keys.K)
@@ -479,12 +497,12 @@ namespace AdvancedFuel
                         Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                         menu++;
 
-                        if (menu > 5) menu = 0;
+                        if ((int)menu > (int)Menu.HeliumHeadlight) menu = Menu.Fuel;
                     }
 
                     if (e.KeyCode == Keys.J)
                     {
-                        if (menu == 0)
+                        if (menu == Menu.Fuel)
                         {
                             Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                             refuelAmount--;
@@ -495,7 +513,7 @@ namespace AdvancedFuel
 
                     if (e.KeyCode == Keys.L)
                     {
-                        if (menu == 0)
+                        if (menu == Menu.Fuel)
                         {
                             Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                             refuelAmount++;
@@ -506,17 +524,18 @@ namespace AdvancedFuel
 
                     if (e.KeyCode == Keys.E)
                     {
-                        Audio.PlaySoundFrontend("SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+                        Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
 
                         switch (menu)
                         {
-                            case 0:
+                            case Menu.Fuel:
                                 if (refuelAmount > 0)
                                 {
                                     if (Game.Player.Money >= totalPrice)
                                     {
                                         Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                                         Game.Player.Money -= Convert.ToInt32(Math.Floor(totalPrice));
+                                        remainder = refuelAmount;
                                         doesEngineHaveToStop = true;
                                         isDoingSomething = true;
                                     }
@@ -525,7 +544,7 @@ namespace AdvancedFuel
 
                                 break;
 
-                            case 1:
+                            case Menu.EngineOil:
                                 if (Game.Player.Money >= (maxEngOilHealth / 2))
                                 {
                                     Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
@@ -538,7 +557,7 @@ namespace AdvancedFuel
 
                                 break;
 
-                            case 2:
+                            case Menu.TransOil:
                                 if (Game.Player.Money >= (maxTransOilHealth / 2))
                                 {
                                     Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
@@ -551,7 +570,7 @@ namespace AdvancedFuel
 
                                 break;
 
-                            case 3:
+                            case Menu.Repair:
                                 if (playerVehicle.EngineHealth < 1000 || playerVehicle.BodyHealth < 1000)
                                 {
                                     if (Game.Player.Money >= Math.Round(Convert.ToDouble(2000.0f - playerVehicle.EngineHealth - playerVehicle.BodyHealth)))
@@ -567,25 +586,29 @@ namespace AdvancedFuel
 
                                 break;
 
-                            case 4:
-                                if (playerVehicle.EngineHealth >= 1000 && playerVehicle.BodyHealth >= 1000)
+                            case Menu.BulletproofTire:
+                                if (playerVehicle.CanTiresBurst)
                                 {
-                                    if (Game.Player.Money >= 500)
+                                    if (playerVehicle.EngineHealth >= 1000 && playerVehicle.BodyHealth >= 1000)
                                     {
-                                        Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
-                                        Game.Player.Money -= 500;
-                                        forTires = true;
-                                        doesEngineHaveToStop = true;
-                                        isDoingSomething = true;
-                                        clock = 0;
+                                        if (Game.Player.Money >= 500)
+                                        {
+                                            Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+                                            Game.Player.Money -= 500;
+                                            forTires = true;
+                                            doesEngineHaveToStop = true;
+                                            isDoingSomething = true;
+                                            clock = 0;
+                                        }
+                                        else UI.Notify("You don't have enough money to replace tires.");
                                     }
-                                    else UI.Notify("You don't have enough money to replace tires.");
+                                    else UI.Notify("You have to repair your vehicle before replacing tires.");
                                 }
-                                else UI.Notify("You have to repair your vehicle before replacing tires.");
+                                else UI.Notify("Your vehicle already has bulletproof tires.");
 
                                 break;
 
-                            case 5:
+                            case Menu.HeliumHeadlight:
                                 if (playerVehicle.EngineHealth >= 1000 && playerVehicle.BodyHealth >= 1000)
                                 {
                                     if (Game.Player.Money >= 500)
@@ -607,11 +630,12 @@ namespace AdvancedFuel
 
                     if (e.KeyCode == Keys.Q && !doesEngineHaveToStop)
                     {
-                        Audio.PlaySoundFrontend("SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+                        Audio.PlaySoundFrontend("PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                         UI.Notify("Thank you. See you later.");
 
-                        menu = 0;
+                        menu = Menu.Fuel;
                         refuelAmount = 0.0f;
+                        remainder = 0.0f;
                         drawStationUI = false;
                         playerVehicle.IsDriveable = true;
                         playerVehicle.EngineRunning = true;
@@ -632,7 +656,7 @@ namespace AdvancedFuel
                         }
                         else if (playerVehicle.Model.IsPlane)
                         {
-                            if (IsNearStation(avturStationBlips))
+                            if (IsNearStation(planeStationBlips))
                             {
                                 drawStationUI = true;
                                 playerVehicle.EngineRunning = false;
@@ -641,7 +665,7 @@ namespace AdvancedFuel
                         }
                         else if (playerVehicle.Model.IsHelicopter)
                         {
-                            if (IsNearStation(avgasStationBlips))
+                            if (IsNearStation(heliStationBlips))
                             {
                                 drawStationUI = true;
                                 playerVehicle.EngineRunning = false;
@@ -650,7 +674,7 @@ namespace AdvancedFuel
                         }
                         else if (playerVehicle.Model.IsBoat)
                         {
-                            if (IsNearStation(minyakStationBlips))
+                            if (IsNearStation(boatStationBlips))
                             {
                                 drawStationUI = true;
                                 playerVehicle.EngineRunning = false;
@@ -693,14 +717,14 @@ namespace AdvancedFuel
                 Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -594.2f, 5025.4f, 140.3f)
             };
 
-            avturStationBlips = new List<Blip>
+            planeStationBlips = new List<Blip>
             {
                 Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1411.75f, 3012.3f, 41.1f),
                 Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -981.0f, -2995.0f, 13.1f),
                 Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2119.5f, 4806.3f, 41.2f)
             };
 
-            avgasStationBlips = new List<Blip>
+            heliStationBlips = new List<Blip>
             {
                 Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 1705.7f, 3271.9f, 40.6f),
                 Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 2102.05f, 4769.4f, 40.7f),
@@ -710,7 +734,7 @@ namespace AdvancedFuel
                 Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, 846.6f, -3219.5f, 5.6f)
             };
 
-            minyakStationBlips = new List<Blip>
+            boatStationBlips = new List<Blip>
             {
                 Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -1800.5f, -1233.1f, 0.3f),
                 Function.Call<Blip>(Hash.ADD_BLIP_FOR_COORD, -3426.5f, 948.2f, 0.1f),
@@ -748,31 +772,31 @@ namespace AdvancedFuel
                 b.Name = "Gas Station";
             }
 
-            foreach (Blip b in avturStationBlips)
+            foreach (Blip b in planeStationBlips)
             {
                 b.Sprite = BlipSprite.Plane;
                 b.Color = BlipColor.White;
                 b.Scale = 0.7f;
                 b.IsShortRange = true;
-                b.Name = "Avtur Station";
+                b.Name = "Plane Station";
             }
 
-            foreach (Blip b in avgasStationBlips)
+            foreach (Blip b in heliStationBlips)
             {
                 b.Sprite = BlipSprite.Helicopter;
                 b.Color = BlipColor.White;
                 b.Scale = 0.7f;
                 b.IsShortRange = true;
-                b.Name = "Avgas Station";
+                b.Name = "Helicopter Station";
             }
 
-            foreach (Blip b in minyakStationBlips)
+            foreach (Blip b in boatStationBlips)
             {
                 b.Sprite = BlipSprite.Boat;
                 b.Color = BlipColor.White;
                 b.Scale = 0.7f;
                 b.IsShortRange = true;
-                b.Name = "Minyak Tanah Station";
+                b.Name = "Boat Station";
             }
         }
 
@@ -821,112 +845,110 @@ namespace AdvancedFuel
             Function.Call(Hash._DRAW_TEXT, x, y);
         }
 
-        private void SettingValues()
+        private void SettingValues(Vehicle v)
         {
-            lastVehiclePlate = playerVehicle.NumberPlate;
-
-            if (playerVehicle.Model.IsCar)
+            if (v.Model.IsCar)
             {
                 gasPrice = 1.7f;
 
-                if (playerVehicle.ClassType.Equals(VehicleClass.Super))
+                if (v.ClassType.Equals(VehicleClass.Super))
                 {
                     totalGas = 380;
                     maxEngOilHealth = 750;
                     maxTransOilHealth = 850;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.SportsClassics))
+                else if (v.ClassType.Equals(VehicleClass.SportsClassics))
                 {
                     totalGas = 300;
                     maxEngOilHealth = 650;
                     maxTransOilHealth = 760;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Sports))
+                else if (v.ClassType.Equals(VehicleClass.Sports))
                 {
                     totalGas = 280;
                     maxEngOilHealth = 640;
                     maxTransOilHealth = 740;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Coupes))
+                else if (v.ClassType.Equals(VehicleClass.Coupes))
                 {
                     totalGas = 250;
                     maxEngOilHealth = 590;
                     maxTransOilHealth = 600;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Military))
+                else if (v.ClassType.Equals(VehicleClass.Military))
                 {
                     totalGas = 520;
                     maxEngOilHealth = 1000;
                     maxTransOilHealth = 1100;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Sedans))
+                else if (v.ClassType.Equals(VehicleClass.Sedans))
                 {
                     totalGas = 270;
                     maxEngOilHealth = 630;
                     maxTransOilHealth = 720;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Muscle))
+                else if (v.ClassType.Equals(VehicleClass.Muscle))
                 {
                     totalGas = 290;
                     maxEngOilHealth = 690;
                     maxTransOilHealth = 600;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.SUVs))
+                else if (v.ClassType.Equals(VehicleClass.SUVs))
                 {
                     totalGas = 330;
                     maxEngOilHealth = 710;
                     maxTransOilHealth = 760;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Utility))
+                else if (v.ClassType.Equals(VehicleClass.Utility))
                 {
                     totalGas = 340;
                     maxEngOilHealth = 750;
                     maxTransOilHealth = 860;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Vans))
+                else if (v.ClassType.Equals(VehicleClass.Vans))
                 {
                     totalGas = 220;
                     maxEngOilHealth = 650;
                     maxTransOilHealth = 760;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Service))
+                else if (v.ClassType.Equals(VehicleClass.Service))
                 {
                     totalGas = 200;
                     maxEngOilHealth = 550;
                     maxTransOilHealth = 560;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.OffRoad))
+                else if (v.ClassType.Equals(VehicleClass.OffRoad))
                 {
                     totalGas = 270;
                     maxEngOilHealth = 450;
                     maxTransOilHealth = 460;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Industrial))
+                else if (v.ClassType.Equals(VehicleClass.Industrial))
                 {
                     totalGas = 350;
                     maxEngOilHealth = 760;
                     maxTransOilHealth = 850;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Emergency))
+                else if (v.ClassType.Equals(VehicleClass.Emergency))
                 {
                     totalGas = 310;
                     maxEngOilHealth = 660;
                     maxTransOilHealth = 770;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Compacts))
+                else if (v.ClassType.Equals(VehicleClass.Compacts))
                 {
                     totalGas = 130;
                     maxEngOilHealth = 450;
                     maxTransOilHealth = 460;
                 }
-                else if (playerVehicle.ClassType.Equals(VehicleClass.Commercial))
+                else if (v.ClassType.Equals(VehicleClass.Commercial))
                 {
                     totalGas = 180;
                     maxEngOilHealth = 470;
                     maxTransOilHealth = 500;
                 }
             }
-            else if (playerVehicle.Model.IsBike || playerVehicle.Model.IsQuadbike)
+            else if (v.Model.IsBike || v.Model.IsQuadbike)
             {
                 gasPrice = 1.3f;
 
@@ -934,7 +956,7 @@ namespace AdvancedFuel
                 maxEngOilHealth = 120;
                 maxTransOilHealth = 150;
             }
-            else if (playerVehicle.Model.IsPlane)
+            else if (v.Model.IsPlane)
             {
                 gasPrice = 97.8f;
 
@@ -942,7 +964,7 @@ namespace AdvancedFuel
                 maxEngOilHealth = 1650;
                 maxTransOilHealth = 1760;
             }
-            else if (playerVehicle.Model.IsHelicopter)
+            else if (v.Model.IsHelicopter)
             {
                 gasPrice = 86.1f;
 
@@ -950,7 +972,7 @@ namespace AdvancedFuel
                 maxEngOilHealth = 1250;
                 maxTransOilHealth = 1360;
             }
-            else if (playerVehicle.Model.IsBoat)
+            else if (v.Model.IsBoat)
             {
                 gasPrice = 9.3f;
 
