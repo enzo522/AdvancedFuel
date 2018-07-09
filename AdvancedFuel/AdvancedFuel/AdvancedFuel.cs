@@ -122,20 +122,20 @@ namespace AdvancedFuel
                     {
                         UsedVehicle uv = usedVehicles.Find(v => v.Handle == playerPed.GetVehicleIsTryingToEnter().Handle);
 
-                        if (uv != null)
+                        if (uv == null)
                         {
-                            SettingValues(playerPed.GetVehicleIsTryingToEnter());
-                            leftGas = uv.LeftGas;
-                            engineOilHealth = uv.EngineOilHealth;
-                            transOilHealth = uv.TransOilHealth;
-                        }
-                        else
-                        {
-                            SettingValues(playerPed.GetVehicleIsTryingToEnter());
+                            SettingValuesOf(playerPed.GetVehicleIsTryingToEnter().ClassType);
                             leftGas = r.Next(5, totalGas);
                             engineOilHealth = r.Next(100, maxEngOilHealth);
                             transOilHealth = r.Next(100, maxTransOilHealth);
                             usedVehicles.Add(new UsedVehicle(playerPed.GetVehicleIsTryingToEnter().Handle, leftGas, engineOilHealth, transOilHealth));
+                        }
+                        else
+                        {
+                            SettingValuesOf(playerPed.GetVehicleIsTryingToEnter().ClassType);
+                            leftGas = uv.LeftGas;
+                            engineOilHealth = uv.EngineOilHealth;
+                            transOilHealth = uv.TransOilHealth;
                         }
                     }
                 }
@@ -174,7 +174,7 @@ namespace AdvancedFuel
 
                 Function.Call(Hash.DRAW_RECT, uiX, uiY, 0.1405f, 0.028f, 0, 0, 0, 150);
                 Function.Call(Hash.DRAW_RECT, uiX + 0.061f, uiY, 0.016f, 0.026f, uiColor, uiColor, uiColor, 70);
-                DrawText(Convert.ToString(Math.Floor(Convert.ToDouble(playerVehicle.Speed) * 4)), uiX + 0.061f, uiY - 0.017f, 0.38f, 1);
+                DrawText(Convert.ToString(Math.Floor(Convert.ToDouble(playerVehicle.Speed) * 3.6f)), uiX + 0.061f, uiY - 0.017f, 0.38f, 1);
                 DrawText("KM/H", uiX + 0.061f, uiY + 0.001f, 0.21f, 1);
                 Function.Call(Hash.DRAW_RECT, uiX + 0.029f, uiY + 0.003f, 0.045f, 0.021f, uiColor, uiColor, uiColor, 70);
 
@@ -214,9 +214,6 @@ namespace AdvancedFuel
 
                 if (drawStationUI)
                 {
-                    totalPrice = gasPrice * refuelAmount;
-                    DrawText("$" + gasPrice + " / L", 0.148f, 0.18f, 0.42f, 2);
-
                     if (playerVehicle.Model.IsCar) DrawText("PREMIUM PETROL", 0.1f, 0.106f, 0.51f, 1);
                     else if (playerVehicle.Model.IsBike || playerVehicle.Model.IsQuadbike) DrawText("FIRST GRADE GASOLINE", 0.1f, 0.106f, 0.51f, 1);
                     else if (playerVehicle.Model.IsPlane) DrawText("JET A-1 KEROSENE", 0.1f, 0.106f, 0.51f, 1);
@@ -234,11 +231,21 @@ namespace AdvancedFuel
                     Function.Call(Hash.DRAW_RECT, 0.1f, 0.124f, 0.16f, 0.04f, uiColor, uiColor, uiColor, 125);
                     Function.Call(Hash.DRAW_RECT, 0.1f, 0.272f, 0.16f, 0.246f, 255, 255, 255, 150);
 
-                    if (!Function.Call<string>(Hash._GET_LABEL_TEXT, playerVehicle.DisplayName).Equals("NULL")) DrawText("[ " + Function.Call<string>(Hash._GET_LABEL_TEXT, playerVehicle.DisplayName) + " ]", 0.1f, 0.15f, 0.42f, 2);
-                    else DrawText("[ " + playerVehicle.DisplayName.ToUpper() + " ]", 0.1f, 0.15f, 0.42f, 2);
+                    string vehicleName = VehicleInfo.GetNameOf(playerVehicle.Model.Hash);
 
-                    DrawText("Fuel", 0.032f, 0.21f, 0.42f, 5);
-                    DrawText(Convert.ToString(Math.Round(refuelAmount, 1)), 0.148f, 0.205f, 0.42f, 2);
+                    if (vehicleName.Contains("|"))
+                    {
+                        DrawText(vehicleName.Split('|')[0], 0.1f, 0.155f, 0.4f, 2);
+                        DrawText(vehicleName.Split('|')[1], 0.1f, 0.175f, 0.4f, 2);
+                    }
+                    else DrawText(vehicleName, 0.1f, 0.165f, 0.4f, 2);
+
+                    totalPrice = gasPrice * refuelAmount;
+                    DrawText("Fuel ($" + gasPrice + " / L)", 0.032f, 0.21f, 0.42f, 5);
+
+                    if (remainder == 0) DrawText(Convert.ToString(Math.Round(refuelAmount, 1)), 0.148f, 0.2075f, 0.42f, 2);
+                    else DrawText(Convert.ToString(Math.Round(remainder, 1)), 0.148f, 0.2075f, 0.42f, 2);
+
                     Function.Call(Hash.DRAW_RECT, 0.148f, 0.221f, 0.033f, 0.028f, uiColor, uiColor, uiColor, 200);
                     Function.Call(Hash.DRAW_RECT, 0.148f, 0.221f, 0.029f, 0.022f, 255, 255, 255, 150);
 
@@ -647,7 +654,7 @@ namespace AdvancedFuel
                     {
                         if (playerVehicle.Model.IsCar || playerVehicle.Model.IsBike || playerVehicle.Model.IsQuadbike)
                         {
-                            if (IsNearStation(gasStationBlips))
+                            if (PlayerIsNear(gasStationBlips))
                             {
                                 drawStationUI = true;
                                 playerVehicle.EngineRunning = false;
@@ -656,7 +663,7 @@ namespace AdvancedFuel
                         }
                         else if (playerVehicle.Model.IsPlane)
                         {
-                            if (IsNearStation(planeStationBlips))
+                            if (PlayerIsNear(planeStationBlips))
                             {
                                 drawStationUI = true;
                                 playerVehicle.EngineRunning = false;
@@ -665,7 +672,7 @@ namespace AdvancedFuel
                         }
                         else if (playerVehicle.Model.IsHelicopter)
                         {
-                            if (IsNearStation(heliStationBlips))
+                            if (PlayerIsNear(heliStationBlips))
                             {
                                 drawStationUI = true;
                                 playerVehicle.EngineRunning = false;
@@ -674,7 +681,7 @@ namespace AdvancedFuel
                         }
                         else if (playerVehicle.Model.IsBoat)
                         {
-                            if (IsNearStation(boatStationBlips))
+                            if (PlayerIsNear(boatStationBlips))
                             {
                                 drawStationUI = true;
                                 playerVehicle.EngineRunning = false;
@@ -845,151 +852,155 @@ namespace AdvancedFuel
             Function.Call(Hash._DRAW_TEXT, x, y);
         }
 
-        private void SettingValues(Vehicle v)
+        private void SettingValuesOf(VehicleClass classType)
         {
-            if (v.Model.IsCar)
+            switch (classType)
             {
-                gasPrice = 1.7f;
+                case VehicleClass.Boats:
+                    gasPrice = 9.3f;
+                    totalGas = 100;
+                    maxEngOilHealth = 250;
+                    maxTransOilHealth = 260;
+                    break;
 
-                if (v.ClassType.Equals(VehicleClass.Super))
-                {
-                    totalGas = 380;
-                    maxEngOilHealth = 750;
-                    maxTransOilHealth = 850;
-                }
-                else if (v.ClassType.Equals(VehicleClass.SportsClassics))
-                {
-                    totalGas = 300;
-                    maxEngOilHealth = 650;
-                    maxTransOilHealth = 760;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Sports))
-                {
-                    totalGas = 280;
-                    maxEngOilHealth = 640;
-                    maxTransOilHealth = 740;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Coupes))
-                {
-                    totalGas = 250;
-                    maxEngOilHealth = 590;
-                    maxTransOilHealth = 600;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Military))
-                {
-                    totalGas = 520;
-                    maxEngOilHealth = 1000;
-                    maxTransOilHealth = 1100;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Sedans))
-                {
-                    totalGas = 270;
-                    maxEngOilHealth = 630;
-                    maxTransOilHealth = 720;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Muscle))
-                {
-                    totalGas = 290;
-                    maxEngOilHealth = 690;
-                    maxTransOilHealth = 600;
-                }
-                else if (v.ClassType.Equals(VehicleClass.SUVs))
-                {
-                    totalGas = 330;
-                    maxEngOilHealth = 710;
-                    maxTransOilHealth = 760;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Utility))
-                {
-                    totalGas = 340;
-                    maxEngOilHealth = 750;
-                    maxTransOilHealth = 860;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Vans))
-                {
-                    totalGas = 220;
-                    maxEngOilHealth = 650;
-                    maxTransOilHealth = 760;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Service))
-                {
-                    totalGas = 200;
-                    maxEngOilHealth = 550;
-                    maxTransOilHealth = 560;
-                }
-                else if (v.ClassType.Equals(VehicleClass.OffRoad))
-                {
-                    totalGas = 270;
-                    maxEngOilHealth = 450;
-                    maxTransOilHealth = 460;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Industrial))
-                {
-                    totalGas = 350;
-                    maxEngOilHealth = 760;
-                    maxTransOilHealth = 850;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Emergency))
-                {
-                    totalGas = 310;
-                    maxEngOilHealth = 660;
-                    maxTransOilHealth = 770;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Compacts))
-                {
-                    totalGas = 130;
-                    maxEngOilHealth = 450;
-                    maxTransOilHealth = 460;
-                }
-                else if (v.ClassType.Equals(VehicleClass.Commercial))
-                {
+                case VehicleClass.Commercial:
+                    gasPrice = 1.7f;
                     totalGas = 180;
                     maxEngOilHealth = 470;
                     maxTransOilHealth = 500;
-                }
-            }
-            else if (v.Model.IsBike || v.Model.IsQuadbike)
-            {
-                gasPrice = 1.3f;
+                    break;
 
-                totalGas = 90;
-                maxEngOilHealth = 120;
-                maxTransOilHealth = 150;
-            }
-            else if (v.Model.IsPlane)
-            {
-                gasPrice = 97.8f;
+                case VehicleClass.Compacts:
+                    gasPrice = 1.7f;
+                    totalGas = 130;
+                    maxEngOilHealth = 450;
+                    maxTransOilHealth = 460;
+                    break;
 
-                totalGas = 830;
-                maxEngOilHealth = 1650;
-                maxTransOilHealth = 1760;
-            }
-            else if (v.Model.IsHelicopter)
-            {
-                gasPrice = 86.1f;
+                case VehicleClass.Coupes:
+                    gasPrice = 1.7f;
+                    totalGas = 250;
+                    maxEngOilHealth = 590;
+                    maxTransOilHealth = 600;
+                    break;
 
-                totalGas = 620;
-                maxEngOilHealth = 1250;
-                maxTransOilHealth = 1360;
-            }
-            else if (v.Model.IsBoat)
-            {
-                gasPrice = 9.3f;
+                case VehicleClass.Emergency:
+                    gasPrice = 1.7f;
+                    totalGas = 310;
+                    maxEngOilHealth = 660;
+                    maxTransOilHealth = 770;
+                    break;
 
-                totalGas = 100;
-                maxEngOilHealth = 250;
-                maxTransOilHealth = 260;
+                case VehicleClass.Helicopters:
+                    gasPrice = 86.1f;
+                    totalGas = 620;
+                    maxEngOilHealth = 1250;
+                    maxTransOilHealth = 1360;
+                    break;
+
+                case VehicleClass.Industrial:
+                    gasPrice = 1.7f;
+                    totalGas = 350;
+                    maxEngOilHealth = 760;
+                    maxTransOilHealth = 850;
+                    break;
+
+                case VehicleClass.Military:
+                    gasPrice = 1.7f;
+                    totalGas = 520;
+                    maxEngOilHealth = 1000;
+                    maxTransOilHealth = 1100;
+                    break;
+
+                case VehicleClass.Motorcycles:
+                    gasPrice = 1.3f;
+                    totalGas = 90;
+                    maxEngOilHealth = 120;
+                    maxTransOilHealth = 150;
+                    break;
+
+                case VehicleClass.Muscle:
+                    gasPrice = 1.7f;
+                    totalGas = 290;
+                    maxEngOilHealth = 690;
+                    maxTransOilHealth = 600;
+                    break;
+
+                case VehicleClass.OffRoad:
+                    gasPrice = 1.7f;
+                    totalGas = 270;
+                    maxEngOilHealth = 450;
+                    maxTransOilHealth = 460;
+                    break;
+
+                case VehicleClass.Planes:
+                    gasPrice = 97.8f;
+                    totalGas = 830;
+                    maxEngOilHealth = 1650;
+                    maxTransOilHealth = 1760;
+                    break;
+
+                case VehicleClass.Sedans:
+                    gasPrice = 1.7f;
+                    totalGas = 270;
+                    maxEngOilHealth = 630;
+                    maxTransOilHealth = 720;
+                    break;
+
+                case VehicleClass.Service:
+                    gasPrice = 1.7f;
+                    totalGas = 200;
+                    maxEngOilHealth = 550;
+                    maxTransOilHealth = 560;
+                    break;
+
+                case VehicleClass.Sports:
+                    gasPrice = 1.7f;
+                    totalGas = 280;
+                    maxEngOilHealth = 640;
+                    maxTransOilHealth = 740;
+                    break;
+
+                case VehicleClass.SportsClassics:
+                    gasPrice = 1.7f;
+                    totalGas = 300;
+                    maxEngOilHealth = 650;
+                    maxTransOilHealth = 760;
+                    break;
+
+                case VehicleClass.Super:
+                    gasPrice = 1.7f;
+                    totalGas = 380;
+                    maxEngOilHealth = 750;
+                    maxTransOilHealth = 850;
+                    break;
+
+                case VehicleClass.SUVs:
+                    gasPrice = 1.7f;
+                    totalGas = 330;
+                    maxEngOilHealth = 710;
+                    maxTransOilHealth = 760;
+                    break;
+
+                case VehicleClass.Utility:
+                    gasPrice = 1.7f;
+                    totalGas = 340;
+                    maxEngOilHealth = 750;
+                    maxTransOilHealth = 860;
+                    break;
+
+                case VehicleClass.Vans:
+                    gasPrice = 1.7f;
+                    totalGas = 220;
+                    maxEngOilHealth = 650;
+                    maxTransOilHealth = 760;
+                    break;
             }
         }
 
-        private static bool IsNearStation(List<Blip> l)
+        private static bool PlayerIsNear(List<Blip> list)
         {
-            foreach (Blip b in l)
-            {
-                if (playerPed.IsInRangeOf(b.Position, 10.0f)) return true;
-            }
-
-            return false;
+            return list.Find(b => playerPed.IsInRangeOf(b.Position, 10.0f)) != null;
         }
 
         private string currentTime()
