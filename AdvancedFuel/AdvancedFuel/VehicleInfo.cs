@@ -4,11 +4,16 @@ using System.Runtime.InteropServices;
 
 namespace AdvancedFuel
 {
-    public class VehicleInfo
+    public static class VehicleInfo
     {
         private delegate IntPtr GetModelInfoDelegate(int hash, IntPtr indexPtr);
-        private static IntPtr address = FindPattern("0F B7 05 ?? ?? ?? ?? 45 33 C9 4C 8B DA 66 85 C0 0F 84 ?? ?? ?? ?? 44 0F B7 C0 33 D2 8B C1 41 F7 F0 48 8B 05 ?? ?? ?? ?? 4C 8B 14 D0 EB 09 41 3B 0A 74 54");
+        private static IntPtr address;
         private static GetModelInfoDelegate GetModelInfo { get { return Marshal.GetDelegateForFunctionPointer<GetModelInfoDelegate>(address); } }
+
+        public static void Init()
+        {
+            address = FindPattern("0F B7 05 ?? ?? ?? ?? 45 33 C9 4C 8B DA 66 85 C0 0F 84 ?? ?? ?? ?? 44 0F B7 C0 33 D2 8B C1 41 F7 F0 48 8B 05 ?? ?? ?? ?? 4C 8B 14 D0 EB 09 41 3B 0A 74 54");
+        }
 
         public static string GetNameOf(int hash)
         {
@@ -23,8 +28,8 @@ namespace AdvancedFuel
             string vehicleName = "";
 
             if (GTA.Game.GetGXTEntry(makeName) != "NULL") vehicleName += GTA.Game.GetGXTEntry(makeName) + "|";
-            if (GTA.Game.GetGXTEntry(displayName) == "NULL") vehicleName += displayName.ToUpper();
-            else vehicleName += GTA.Game.GetGXTEntry(displayName);
+
+            vehicleName += GTA.Game.GetGXTEntry(displayName) == "NULL" ? displayName.ToUpper() : GTA.Game.GetGXTEntry(displayName);
 
             return vehicleName;
         }
@@ -42,17 +47,17 @@ namespace AdvancedFuel
         private unsafe static IntPtr FindPattern(string pattern)
         {
             ProcessModule module = Process.GetCurrentProcess().MainModule;
-            long address = module.BaseAddress.ToInt64();
-            long endAddress = address + module.ModuleMemorySize;
+            long addr = module.BaseAddress.ToInt64();
+            long endAddr = addr + module.ModuleMemorySize;
 
             pattern = pattern.Replace(" ", "").Replace("??", "00");
             byte[] bytesArray = new byte[pattern.Length / 2];
 
             for (int i = 0; i < pattern.Length; i += 2) bytesArray[i / 2] = byte.Parse(pattern.Substring(i, 2), System.Globalization.NumberStyles.HexNumber);
 
-            for (; address < endAddress; address++)
+            for (; addr < endAddr; addr++)
             {
-                IntPtr data = new IntPtr(address);
+                IntPtr data = new IntPtr(addr);
 
                 if (Compare(data, bytesArray)) return data;
             }

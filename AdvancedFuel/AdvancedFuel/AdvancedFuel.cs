@@ -56,6 +56,7 @@ namespace AdvancedFuel
 
         static AdvancedFuel()
         {
+            VehicleInfo.Init();
             uiX = 0.0855f;
             uiY = 0.802f;
             uiColor = 100;
